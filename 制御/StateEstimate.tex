@@ -1,0 +1,356 @@
+\ifnum \count99 < 2% 
+
+\input{./../header.tex}
+
+\begin{document}
+\fi
+%-------------------------------------------------------------------
+実用的で簡単なところからスタートして、だんだんと一般的な内容に踏み込んでいく。
+
+\section{Luenbergerのオブザーバ}
+
+現代制御の本だとよく出てくるLuenbergerオブザーバが出てくる。どういった構成になっているのか。
+線形システム
+\begin{align}
+\dfrac{dx(t)}{dt}=Ax(t)+Bu(t)
+\end{align}
+があったとき、観測値$y(t)$は
+\begin{align}
+y(t)=Cx(t)
+\end{align}
+のように得られる。$y(t)$から$x(t)$を常に得られるとは限らない。
+このとき最も簡単な方法として思いつくのが、システムと同じものを計算機上にコピーとして用意して
+制御と同時に計算させる。ただ、モデリングの誤差や初期値の誤差があるために、この方法は理想的すぎる。
+まずは、よく使われるオブザーバの構成について紹介する。
+
+
+ちなみにこの観測値と推定値との誤差をとって戻すアイデアは、確率システムで出てくるイノベーション過程の
+観点からみるとまた一味変わって見える。ざっくりいうと
+\begin{align}
+e(t)=y(t)-C\hat{x}(t)
+\end{align}
+は観測値から既知の情報分を抜いているので
+本質的に観測値から得られる新しい情報を意味しているのでイノベーションと呼んでいる。
+
+\subsection{一般的なオブザーバの構成}
+ここで紹介したようなオブザーバだけが許されている訳ではない。
+オブザーバとして許される、一般的な条件について紹介する。
+
+
+
+\section{カルマンフィルタ}
+
+使い勝手の良さと理解のしやすさから先にオブザーバについて触れたが、この手の手法の理解を進めるためには
+カルマンフィルタも触れておいた方がよかろうと思う。最終的な構成をみると、ゲインが可変になってるだけで
+オブザーバとまったく同じやんけ！とか思えるので、カルマンフィルタに対する敷居も少し下がる。
+
+\subsection{ベイズ推定値から最小分散推定へ}
+状態$x$を推定する手法を$f()$とするとその誤差$e$は
+\begin{align}
+e = x-f(y)
+\end{align}
+
+コストを$L(e)$とすると、コスト関数の期待値は
+
+\begin{align}
+R[f] 
+&=E[L(e)] 		\notag\\
+&=E[L(x-f(y))] 			\notag\\
+&= \int_{-\infty}^\infty
+    L(x-f(y)) p(x,y)dxdy	 			 \notag\\
+&=\int_{-\infty}^\infty 
+    \left( \int_{-\infty}^\infty
+    L(x-f(y)) p(x|y)dx		 			
+	\right) p(y)dy
+\end{align}
+%
+条件付きベイズリスク
+\begin{align}
+R_c[f] 
+&=\int_{-\infty}^\infty
+    L(x-f(y)) p(x|y)dx		
+\end{align}
+
+コスト関数の形は他にもあるが、$L(e)=e^2$のような2乗誤差をとってみると
+%
+\begin{align}
+R_c[f] 
+&=\int_{-\infty}^\infty
+    (x-f(y))(x-f(y))^T p(x|y)dx		 			
+\end{align}
+
+これを最小にすることを考える。簡単のために、スカラーで書く。
+条件つき期待値を
+
+\begin{align}
+\bar{x}(y) = E[x|y]=\int_{-\infty}^\infty x p(x|y)dx		
+\end{align}
+
+として
+
+\begin{align}
+R_c[f] 
+&=\int_{-\infty}^\infty
+    (x-f(y))^2 p(x|y)dx		 			\notag\\
+&=\int_{-\infty}^\infty
+    \left(
+    x + \bar{x}(y) -\bar{x}(y) -f(y)
+    \right)^2 p(x|y)dx		 			\notag\\
+&=\int_{-\infty}^\infty
+		(x-\bar{x}(y))^2
+     p(x|y)dx
+     +
+     2\int_{-\infty}^\infty
+		(x-\bar{x}(y))(\bar{x}(y)-f(y))
+	p(x|y)dx
+	+
+	\int_{-\infty}^\infty
+		(\bar{x}(y)-f(y))^2
+     p(x|y)dx    									\notag\\
+&=\int_{-\infty}^\infty
+		(x-\bar{x}(y))^2
+     p(x|y)dx
+     +
+     2(\bar{x}(y)-f(y))\int_{-\infty}^\infty
+		(x-\bar{x}(y))
+	p(x|y)dx
+	+
+	(\bar{x}(y)-f(y))^2 				\notag\\
+&=\int_{-\infty}^\infty
+		(x-\bar{x}(y))^2
+     p(x|y)dx
+     +
+     2(\bar{x}(y)-f(y))\left( \int_{-\infty}^\infty
+		x
+	p(x|y)dx -\bar{x}(y)
+	\right)
+	+
+	(\bar{x}(y)-f(y))^2 				\notag\\
+&=E[(x-\bar{x}(y))^2|y]+(\bar{x}(y)-f(y))^2  \notag\\
+\end{align}
+となるからであり
+\begin{equation}
+E[(x-\bar{x}(y))^2|y]+(\bar{x}(y)-f(y))^2 \geq E[(x-\bar{x}(y))^2|y]
+\end{equation}
+推定値を
+\begin{equation}
+f(y) = {x}(y)
+\end{equation}
+のように、条件付き期待値としたときに等号成立し最小となる。
+これを最小分散推定値という。
+
+また、推定誤差$e$の期待値は
+\begin{align}
+E[e]
+&=
+E[x-\bar{x}(y)] 						\notag\\
+&=
+\int_{-\infty}^\infty
+	(x-\bar{x}(y))
+p(x,y)dxdy 							\notag\\
+&=
+\int_{-\infty}^\infty
+	x
+p(x,y)dxdy
+-
+\int_{-\infty}^\infty
+	\bar{x}(y)
+p(x,y)dxdy  							\notag\\
+&=
+\int_{-\infty}^\infty
+	x
+p(x,y)dxdy
+-
+\int_{-\infty}^\infty
+\left(
+	\int_{-\infty}^\infty
+		x
+	p(x|y)dx
+\right)
+p(y)dy  							\notag\\ 
+&=
+\int_{-\infty}^\infty
+	x
+p(x,y)dxdy
+-
+\int_{-\infty}^\infty
+	x
+p(x,y)dxdy  							\notag\\ 
+&=0 			\notag
+\end{align}
+
+なるから、最小分散推定値は不偏推定となる。
+
+\subsection{最小分散推定値を時系列に用いる}
+条件付きベイズリスクを最小にするような推定値は、条件つき期待値で得られることを示した。
+ここでは確率密度関数の時間的な推移を計算する$p(x_k|Y^k)$と$p(x_{k+1}|Y^k)$について
+紹介する。
+
+観測更新ステップ
+\begin{align}
+p(x_k|Y^k)
+&=
+\dfrac{p(y_k|x_k)p(x_k|Y^{k-1})}{p(y_k|Y^{k-1})}
+\end{align}
+
+
+
+時間更新ステップ
+\begin{align}
+p(x_{k+1}|Y^k)
+&=
+\int_{-\infty}^\infty
+p(x_{t+1}|x_t) p(x_t|Y^t)dx_t
+\end{align}
+
+
+
+
+
+
+
+\subsection{線形カルマンフィルタ}
+
+\begin{align}
+\dfrac{dx(t)}{dt}&=Ax(t)+Bu(t)+w(t) 			\\
+y(t)&=Cx(t) + v(t)
+\end{align}
+
+雑音はガウシアンを過程する。システム雑音は具体的にはモデルの誤差を想定している。
+ガウシアンを仮定するのは、ガウシアンが全周波数で同一のパワーを持っているから、ノイズとしては最悪な条件を
+考えていることになる。やりすぎだと思うなら、$Fv(t)$とか適当なフィルタをかけてあげればよい。
+
+確率システムからスタートして最適フィルタを構成する。最適というからには評価関数がある。
+ベイズリスクと呼ばれる推定値との誤差を最小にできる
+
+
+
+\section{ガウシアンフィルタ}
+確率密度関数をガウシアンを仮定する。すでに紹介したカルマンフィルタはガウシアンフィルタの線形な場合と言える。
+非線形な場合はガウシアンになるとは限らないためカルマンフィルタのように条件付き期待値を
+求めたとしても不偏推定値とはならない。
+そういう場合はガウシアンの和で確率密度関数を表現する混合ガウシアンフィルタもあるが、
+計算コストとのトレードオフも考えると十分なケースも多い。
+
+ベイズリスクを最小にする推定値は以下の条件付き期待値で
+
+\begin{align}
+x
+\end{align}
+
+\section{Gauss-Hermite Filter}
+確率密度関数にガウシアンを仮定しているとき、モーメントの計算における積分は
+Gauss求積のガウスエルミート型になっている。
+
+
+
+\section{UnscentedKalmanFilter}
+\subsection{Unscented変換}
+UTの気持ち
+\begin{align}
+y=h(x)
+\end{align}
+
+ガウスエルミート求積でもわかるように、適切な重みと点を決めれば積分を近似的に求めることができる。
+似たようなアイデアで、UTでは確率変数の非線形変換における、アンサンブル平均で期待値、分散を求める。
+具体的には2n個のsigma pointと呼ばれる点を以下のように生成する。
+
+\begin{align}
+x^{(i)}&=\bar{x}+x_{sigma}^{(i)}  				\\
+x_{sigma}^{(i)} &= (\sqrt{nP})_i^T 					\\
+x_{sigma}^{(i+n)} &= -(\sqrt{nP})_i^T
+\end{align}
+
+sigma pointの変換先は
+
+\begin{align}
+y^{(i)} = h(x^{(i)})
+\end{align}
+
+その期待値
+
+\begin{align}
+\bar{x}_u&= 							\\
+P_u&=
+\end{align}
+
+
+
+
+\section{拘束条件}
+
+\subsection{constrained}
+まず拘束条件なしで得られる推定値
+
+\begin{align}
+\hat{x}_k
+=
+\argmax_{x_k} p(x_k|Y^k)
+\end{align}
+
+を求める。これは条件つき期待値
+
+\begin{align}
+x_k=E(x_k|Y^k)
+\end{align}
+例として、拘束条件付きの推定値$\tilde{x}_k$としたとき
+この推定値に拘束条件$D\tilde{x}_k=d$をつける。
+ラグランジアンを以下で定義する。
+
+\begin{align}
+L
+&=
+(\tilde{x}_k-\hat{x}_k)^T P_k^{-1} (\tilde{x}_k-\hat{x}_k)
++2\lambda(D\tilde{x}_k-d)												\\
+%
+\dfrac{\partial L}{\partial x_k}  
+&=
+P_k^{-1}(\tilde{x}_k-\hat{x}_k)+D^T\lambda = 0					\\
+%
+\dfrac{\partial L}{\partial \lambda}
+&=
+D\tilde{x}_k-d = 0
+\end{align}
+
+上式より推定値$\hat{x}_k$から$\tilde{x}_k$を求める更新則を求める
+
+\begin{align}
+-P_k^{-1}(\tilde{x}_k-\hat{x}_k) &= D^T\lambda  					\notag\\
+-(D^T)^{-1}P_k^{-1}(D^{-1}d-\hat{x}_k) &= \lambda			\notag\\
+-(D^T)^{-1}P_k^{-1}D^{-1}(d-D\hat{x}_k) &= \lambda		\notag\\
+\lambda &=  (DP_k D^T)^{-1}(D\hat{x}_k-d)
+\end{align}
+
+であるから
+
+\begin{align}
+\tilde{x}_k
+&=
+\hat{x}_k - P_k D^T \lambda 			\notag\\
+&=
+\hat{x}_k - P_k D^T (DP_k D^T)^{-1}(D\hat{x}_k-d)
+\end{align}
+
+これは拘束軌道に接する最適値を求めている。
+
+\subsection{truncated}
+状態変数の値に上限、下限があるときに確率密度関数をそこで打ち切る方法
+
+
+\section{moving horizon estimation}
+
+
+
+
+
+
+
+
+
+
+
+
+%-------------------------------------------------------------------
+\ifnum \count99 < 2
+\end{document}
+\fi
