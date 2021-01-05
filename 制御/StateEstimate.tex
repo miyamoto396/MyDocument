@@ -238,14 +238,18 @@ y(t)&=Cx(t) + v(t)
 x
 \end{align}
 
-\section{Gauss-Hermite Filter}
+\subsection{拡張カルマンフィルタ}
+テイラー展開して線形化して線形カルマンフィルタのアルゴリズムに乗せる。ヤコビアンの計算が必要になる。
+
+
+\subsection{Gauss-Hermite Filter}
 確率密度関数にガウシアンを仮定しているとき、モーメントの計算における積分は
 Gauss求積のガウスエルミート型になっている。
 
 
 
-\section{UnscentedKalmanFilter}
-\subsection{Unscented変換}
+\subsection{UnscentedKalmanFilter}
+\subsubsection{Unscented変換}
 UTの気持ち
 \begin{align}
 y=h(x)
@@ -273,6 +277,28 @@ y^{(i)} = h(x^{(i)})
 \bar{x}_u&= 							\\
 P_u&=
 \end{align}
+
+
+\section{Guassian Sum Filter}
+非線形な確率密度関数を陽に扱う方法として、ガウシアンの和で確率密度関数を近似する方法を考える。
+
+\section{Maximum Correntropy Kalman Filter}
+Correntropyは二つの確率変数の類似性測度である。
+二つの確率変数$X,Y$が与えられたとき、結合確率密度を$F(x,y)$として
+correntoropy$V(x,y)$は以下で定義される
+$\kappa$はシフト不変なMarcerカーネル(よくわからん)で、
+本書ではガウシアンカーネル
+
+
+
+
+\begin{align}
+V(x,y)
+=E[\kappa(X,Y)]
+=\int \kappa(x,y) dF_{XY}(x,y)
+\end{align}
+
+\subsection{Maximum Correntoropy 基準}
 
 
 
